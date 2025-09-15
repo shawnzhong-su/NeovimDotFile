@@ -1,0 +1,19 @@
+{
+    "Docs": {
+        "prefix": "docs",
+        "body": [
+            "{% docs ${1:name} %}",
+            "$2",
+            "{% enddocs %}"
+        ],
+        "description": "Docs"
+    },
+    "callout_todo": {
+        "prefix": "todo",
+        "body": [
+            "> [!TODO]",
+            "> $1"
+        ],
+        "description": "Callout TODO"
+    }
+}
