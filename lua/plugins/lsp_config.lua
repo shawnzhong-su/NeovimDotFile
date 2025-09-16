@@ -8,7 +8,7 @@ return {
             settings = {
               python = {
                 analysis = {
-                  typeCheckingMode = "off",
+                  typeCheckingMode = "basic",
                   useLibraryCodeForTypes = true,
                   autoSearchPaths = true,
                   diagnosticMode = "workspace",
@@ -18,6 +18,7 @@ return {
                     reportOptionalMemberAccess = "none",
                     reportOptionalSubscript = "none",
                     reportUnknownMemberType = "none",
+                    reportAssignmentType = "none",
                   },
                 },
                 pythonPath = "/opt/miniconda3/bin/python",
@@ -36,11 +37,6 @@ return {
           },
         }),
       })
-
-      if ret.inlay_hints then
-        ret.inlay_hints.exclude = vim.list_extend(ret.inlay_hints.exclude or {}, { "python" })
-      end
-
       return ret
     end,
   },
