@@ -11,7 +11,7 @@ return {
                   typeCheckingMode = "basic",
                   useLibraryCodeForTypes = true,
                   autoSearchPaths = true,
-                  diagnosticMode = "workspace",
+                  diagnosticMode = "openFiles",
                   diagnosticSeverityOverrides = {
                     reportArgumentType = "none", -- ✅ 这里才对
                     reportGeneralTypeIssues = "none",
@@ -21,7 +21,6 @@ return {
                     reportAssignmentType = "none",
                   },
                 },
-                pythonPath = "/opt/miniconda3/bin/python",
               },
             },
             mason = false,
