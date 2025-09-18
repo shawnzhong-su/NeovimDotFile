@@ -8,13 +8,13 @@ return {
   event = "VeryLazy",
   keys = {
     {
-      "<Leader>o",
+      "<Leader>e",
       "<cmd>Yazi<cr>",
       desc = "Open yazi at the current file",
     },
     {
       -- Open in the current working directory
-      "<leader>O",
+      "<leader>E",
       "<cmd>Yazi toggle<cr>",
       desc = "Resume the last yazi session",
     },
