@@ -27,7 +27,7 @@ require("lazy").setup({
     lazy = false, -- 你的插件会在启动时加载
     version = false, -- 使用最新的 Git 提交
   },
-  install = { colorscheme = { "tokyonight", "habamax" } },
+  install = { colorscheme = { "carbonfox", "habamax" } },
   checker = {
     enabled = true,
     notify = false,
