@@ -10,13 +10,12 @@ return {
     {
       "<Leader>e",
       "<cmd>Yazi<cr>",
-      desc = "Open yazi at the current file",
+      desc = "Open Yazi at the current file",
     },
     {
-      -- Open in the current working directory
       "<leader>E",
       "<cmd>Yazi toggle<cr>",
-      desc = "Resume the last yazi session",
+      desc = "Resume the last Yazi session",
     },
   },
   opts = {
@@ -25,11 +24,7 @@ return {
       height = 1,
       width = 0.9,
     },
-    -- the transparency of the yazi floating window (0-100). See :h winblend
     yazi_floating_window_winblend = 0,
-    -- the type of border to use for the floating window. Can be many values,
-    -- including 'none', 'rounded', 'single', 'double', 'shadow', etc. For
-    -- more information, see :h nvim_open_win
     yazi_floating_window_border = "rounded",
     open_for_directories = true,
     keymaps = {
@@ -49,14 +44,8 @@ return {
       grep_in_selected_files = "fzf-lua",
     },
     future_features = {
-      -- Whether to use `ya emit reveal` to reveal files in the file manager.
-      -- Requires yazi 0.4.0 or later (from 2024-12-08).
-      ya_emit_reveal = true,
-
-      -- Use `ya emit open` as a more robust implementation for opening files
-      -- in yazi. This can prevent conflicts with custom keymappings for the enter
-      -- key. Requires yazi 0.4.0 or later (from 2024-12-08).
-      ya_emit_open = true,
+      ya_emit_reveal = true, -- 需要 yazi >= 0.4.0
+      ya_emit_open = true, -- 需要 yazi >= 0.4.0
     },
   },
 }

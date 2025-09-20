@@ -1,4 +1,4 @@
--- 配置 Python 与 TOML LSP (pyright, taplo, ruff) 并统一 capabilities
+-- 配置 Python、TOML 和 Vue3 LSP 并统一 capabilities
 return {
   {
     "neovim/nvim-lspconfig",
@@ -8,9 +8,25 @@ return {
         vim.tbl_deep_extend("force", opts.capabilities or {}, vim.lsp.protocol.make_client_capabilities())
       base_capabilities.textDocument.completion.completionItem.snippetSupport = true
 
+      -- 获取 vue-language-server 路径 (Mason v2)
+      local vue_language_server_path = vim.fn.stdpath("data")
+        .. "/mason/packages/vue-language-server/node_modules/@vue/language-server"
+
+      -- Vue TypeScript 插件配置
+      local vue_plugin = {
+        name = "@vue/typescript-plugin",
+        location = vue_language_server_path,
+        languages = { "vue" },
+        configNamespace = "typescript",
+      }
+
+      -- TypeScript 文件类型（包含 Vue）
+      local tsserver_filetypes = { "typescript", "javascript", "javascriptreact", "typescriptreact", "vue" }
+
       -- 合并 LSP 配置
       local ret = vim.tbl_deep_extend("force", opts, {
         servers = {
+          -- Python LSP
           pyright = {
             settings = {
               python = {
@@ -33,9 +49,13 @@ return {
             capabilities = base_capabilities,
             mason = false,
           },
+
+          -- TOML LSP
           taplo = {
             capabilities = base_capabilities,
           },
+
+          -- Ruff LSP
           ruff = {
             capabilities = base_capabilities,
             -- 禁用 hover 避免与 pyright 冲突
@@ -43,7 +63,150 @@ return {
               client.server_capabilities.hoverProvider = false
             end,
           },
+
+          -- Vue Language Server
+          vue_ls = {
+            capabilities = base_capabilities,
+            filetypes = { "vue" },
+            settings = {
+              vue = {
+                updateImportsOnFileMove = {
+                  enabled = true,
+                },
+              },
+            },
+            -- 使用最新版 nvim-lspconfig 不需要 on_init
+            -- 如果遇到问题，取消下面的注释
+            --[[
+            on_init = function(client)
+              client.handlers['tsserver/request'] = function(_, result, context)
+                local vtsls_clients = vim.lsp.get_clients({ bufnr = context.bufnr, name = 'vtsls' })
+                if #vtsls_clients == 0 then
+                  vim.notify('Could not find `vtsls` lsp client, `vue_ls` would not work without it.', vim.log.levels.ERROR)
+                  return
+                end
+                
+                local vtsls_client = vtsls_clients[1]
+                local param = unpack(result)
+                local id, command, payload = unpack(param)
+                
+                vtsls_client:exec_cmd({
+                  title = 'vue_request_forward',
+                  command = 'typescript.tsserverRequest',
+                  arguments = {
+                    command,
+                    payload,
+                  },
+                }, { bufnr = context.bufnr }, function(_, r)
+                  local response = r and r.body
+                  local response_data = { { id, response } }
+                  client:notify('tsserver/response', response_data)
+                end)
+              end
+            end,
+            --]]
+          },
+
+          -- TypeScript Language Server (vtsls)
+          vtsls = {
+            capabilities = base_capabilities,
+            filetypes = tsserver_filetypes,
+            settings = {
+              vtsls = {
+                enableMoveToFileCodeAction = true,
+                autoUseWorkspaceTsdk = true,
+                experimental = {
+                  completion = {
+                    enableServerSideFuzzyMatch = true,
+                  },
+                },
+                tsserver = {
+                  globalPlugins = {
+                    vue_plugin,
+                  },
+                },
+              },
+              typescript = {
+                updateImportsOnFileMove = {
+                  enabled = "always",
+                },
+                suggest = {
+                  completeFunctionCalls = true,
+                },
+                inlayHints = {
+                  parameterNames = {
+                    enabled = "literals",
+                  },
+                  parameterTypes = {
+                    enabled = true,
+                  },
+                  variableTypes = {
+                    enabled = false,
+                  },
+                  propertyDeclarationTypes = {
+                    enabled = true,
+                  },
+                  functionLikeReturnTypes = {
+                    enabled = true,
+                  },
+                  enumMemberValues = {
+                    enabled = true,
+                  },
+                },
+              },
+            },
+            -- 处理 Vue 文件的语义标记
+            on_attach = function(client, bufnr)
+              if vim.bo[bufnr].filetype == "vue" then
+                -- 对 Vue 文件禁用 vtsls 的语义标记，由 vue_ls 处理
+                client.server_capabilities.semanticTokensProvider.full = false
+              else
+                client.server_capabilities.semanticTokensProvider.full = true
+              end
+            end,
+          },
+
+          -- 如果你想使用 ts_ls 而不是 vtsls，取消下面的注释并注释掉上面的 vtsls 配置
+          --[[
+          ts_ls = {
+            capabilities = base_capabilities,
+            filetypes = tsserver_filetypes,
+            init_options = {
+              plugins = {
+                vue_plugin,
+              },
+            },
+            settings = {
+              typescript = {
+                updateImportsOnFileMove = {
+                  enabled = "always",
+                },
+                suggest = {
+                  completeFunctionCalls = true,
+                },
+                inlayHints = {
+                  includeInlayParameterNameHints = "literals",
+                  includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+                  includeInlayFunctionParameterTypeHints = true,
+                  includeInlayVariableTypeHints = false,
+                  includeInlayPropertyDeclarationTypeHints = true,
+                  includeInlayFunctionLikeReturnTypeHints = true,
+                  includeInlayEnumMemberValueHints = true,
+                },
+              },
+            },
+            on_attach = function(client, bufnr)
+              if vim.bo[bufnr].filetype == 'vue' then
+                client.server_capabilities.semanticTokensProvider.full = false
+              else
+                client.server_capabilities.semanticTokensProvider.full = true
+              end
+            end,
+          },
+          --]]
         },
+
+        -- 全局 capabilities 配置
         capabilities = vim.tbl_deep_extend("force", opts.capabilities or {}, {
           positionEncodings = { "utf-8" },
           workspace = {
@@ -54,7 +217,22 @@ return {
           },
         }),
       })
+
       return ret
+    end,
+  },
+
+  -- 可选：添加 Vue 相关的语义标记高亮组配置
+  {
+    "nvim-treesitter/nvim-treesitter",
+    opts = function(_, opts)
+      -- 确保安装 Vue parser
+      vim.list_extend(opts.ensure_installed or {}, { "vue", "typescript", "javascript" })
+
+      -- 设置 Vue 组件高亮组（保持旧行为）
+      vim.api.nvim_set_hl(0, "@lsp.type.component", { link = "@type" })
+
+      return opts
     end,
   },
 }
