@@ -75,24 +75,26 @@ return {
                 },
               },
             },
-            -- 使用最新版 nvim-lspconfig 不需要 on_init
-            -- 如果遇到问题，取消下面的注释
-            --[[
+            -- 必须启用 on_init 来处理 tsserver 请求转发
             on_init = function(client)
-              client.handlers['tsserver/request'] = function(_, result, context)
-                local vtsls_clients = vim.lsp.get_clients({ bufnr = context.bufnr, name = 'vtsls' })
+              client.handlers["tsserver/request"] = function(_, result, context)
+                local vtsls_clients = vim.lsp.get_clients({ bufnr = context.bufnr, name = "vtsls" })
                 if #vtsls_clients == 0 then
-                  vim.notify('Could not find `vtsls` lsp client, `vue_ls` would not work without it.', vim.log.levels.ERROR)
+                  -- 静默返回，避免过多错误提示
                   return
                 end
-                
+
                 local vtsls_client = vtsls_clients[1]
-                local param = unpack(result)
+                local param = result and unpack(result)
+                if not param then
+                  return
+                end
+
                 local id, command, payload = unpack(param)
-                
+
                 vtsls_client:exec_cmd({
-                  title = 'vue_request_forward',
-                  command = 'typescript.tsserverRequest',
+                  title = "vue_request_forward",
+                  command = "typescript.tsserverRequest",
                   arguments = {
                     command,
                     payload,
@@ -100,11 +102,10 @@ return {
                 }, { bufnr = context.bufnr }, function(_, r)
                   local response = r and r.body
                   local response_data = { { id, response } }
-                  client:notify('tsserver/response', response_data)
+                  client:notify("tsserver/response", response_data)
                 end)
               end
             end,
-            --]]
           },
 
           -- TypeScript Language Server (vtsls)
@@ -124,6 +125,8 @@ return {
                   globalPlugins = {
                     vue_plugin,
                   },
+                  -- 添加最大内存限制，避免大项目内存溢出
+                  maxTsServerMemory = 8192,
                 },
               },
               typescript = {
@@ -132,6 +135,14 @@ return {
                 },
                 suggest = {
                   completeFunctionCalls = true,
+                },
+                -- 禁用 TypeScript 的语义检查，让 vue_ls 处理
+                preferences = {
+                  importModuleSpecifier = "relative",
+                  includePackageJsonAutoImports = "auto",
+                },
+                tsserver = {
+                  useSyntaxServer = "never",
                 },
                 inlayHints = {
                   parameterNames = {
@@ -157,11 +168,11 @@ return {
             },
             -- 处理 Vue 文件的语义标记
             on_attach = function(client, bufnr)
+              -- 对 Vue 文件完全禁用 vtsls 的诊断
               if vim.bo[bufnr].filetype == "vue" then
-                -- 对 Vue 文件禁用 vtsls 的语义标记，由 vue_ls 处理
-                client.server_capabilities.semanticTokensProvider.full = false
-              else
-                client.server_capabilities.semanticTokensProvider.full = true
+                client.server_capabilities.semanticTokensProvider = nil
+                -- 禁用 vtsls 在 Vue 文件中的诊断
+                vim.diagnostic.disable(bufnr, vim.lsp.diagnostic.get_namespace(client.id))
               end
             end,
           },
