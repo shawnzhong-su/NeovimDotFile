@@ -1,3 +1,6 @@
-return { { "EdenEast/nightfox.nvim" }, { "LazyVim/LazyVim", opts = {
-  colorscheme = "carbonfox",
-} } }
+return {
+  { "EdenEast/nightfox.nvim", opts = { trasnparent = true } },
+  { "LazyVim/LazyVim", opts = {
+    colorscheme = "carbonfox",
+  } },
+}
