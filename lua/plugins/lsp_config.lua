@@ -68,9 +68,6 @@ return {
             filetypes = { "vue" },
             init_options = {
               typescript = {
-                ts_ls = 
-              }
-              vue = {
                 -- 比如禁用 Hy​brid mode 如果需要
                 hybridMode = false,
               },
