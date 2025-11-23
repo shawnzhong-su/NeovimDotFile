@@ -27,13 +27,4 @@ function M.get_pyright_config()
   }
 end
 
-function M.get_ruff_config()
-  return {
-    capabilities = capabilities.get_base_capabilities(),
-    on_attach = function(client)
-      client.server_capabilities.hoverProvider = false
-    end,
-  }
-end
-
 return M
